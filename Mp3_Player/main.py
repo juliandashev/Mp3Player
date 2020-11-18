@@ -1,12 +1,15 @@
 from tkinter import *
 from tkinter import filedialog, messagebox
+from mutagen.mp3 import MP3
+import tkinter.ttk as ttk
 import pygame
 import os
+import time
 
 root = Tk()
 root.title("Mp3 Player")
-root.geometry("500x250")
-root.resizable(False, False)
+root.geometry("500x350")
+# root.resizable(False, False)
 
 # Initialize Pygame Mixer
 pygame.mixer.init()
@@ -36,12 +39,21 @@ def PlaySong():
     pygame.mixer.music.load(song_path)
     pygame.mixer.music.play(loops=0)
 
+    # Call PlayTime func to get the song time and len
+    PlayTime()
+
+    # Update slider
+    slider_pos = int(song_len)
+    my_slider.config(to=slider_pos, value=0)
+
 
 # Stop the song thats playing
 def StopSong():
     pygame.mixer.music.stop()
     songs_box.selection_clear(ACTIVE)
 
+    # clear time bar
+    time_bar.config(text='')
 
 # Create Global Pause var
 global paused
@@ -68,7 +80,7 @@ def NextSong():
     # current song - returns number
     next_s = songs_box.curselection()
     # add one to the current song
-    next_s = next[0] + 1
+    next_s = next_s[0] + 1
 
     # Get the song
     song = songs_box.get(next_s)
@@ -127,6 +139,8 @@ def DeleteSong():
         messagebox.showinfo("Error", "Please select a song!")
         return
 
+    print(n, num)
+
     # Delete the selected song
     songs_box.delete(ANCHOR)
 
@@ -135,6 +149,7 @@ def DeleteSong():
 
     # set active bar
     songs_box.selection_set(num, last=None)
+
     # stop if its playing
     pygame.mixer.music.stop()
 
@@ -145,6 +160,47 @@ def DeleteAllSongs():
     songs_box.delete(0, END)
     # stop if something is playing
     pygame.mixer.music.stop()
+
+
+# Create slider function
+def Slide(x):
+    try:
+        slider_label.config(text=f"{int(my_slider.get())} of {int(song_len)}")
+    except NameError:
+        messagebox.showinfo("No Song Selected", "Please choose a song!")
+
+
+# Get song length and time info
+def PlayTime():
+    # Current time
+    current_time = pygame.mixer.music.get_pos() / 1000
+
+    # Convert to time format
+    convert_current_time = time.strftime('%M:%S', time.gmtime(current_time))
+
+    # Get the song
+    song = songs_box.get(ACTIVE)
+    # get the actual dir
+    song = f"{songs_dirs[0]}/{song}.mp3"
+    # load song with mutagen
+    song_mut = MP3(song)
+
+    # get song len with mutagen
+    global song_len
+    song_len = song_mut.info.length
+
+    # Convert to time format
+    convert_song_len = time.strftime('%M:%S', time.gmtime(song_len))
+
+    # Output time to status bar
+    time_bar.config(text=f"Time Elapsed: {convert_current_time} of {convert_song_len}")
+    slider_label.config(text=f"{int(my_slider.get())} of {int(song_len)}")
+
+    # Update slider pos value to the curent songs value
+    my_slider.config(value=int(current_time))
+
+    # update time
+    time_bar.after(1000, PlayTime)
 
 # Create playlist box
 songs_box = Listbox(root, bg="black", fg="green", width=60, selectbackground="gray", selectforeground="black")
@@ -187,5 +243,17 @@ root.config(menu=my_menu)
 remove_song_menu = Menu(my_menu)
 my_menu.add_cascade(label="Remove All Songs", menu=remove_song_menu)
 remove_song_menu.add_command(label="Clear Every Song From The Playlist", command=DeleteAllSongs)
+
+# Create time bar
+time_bar = Label(root, text='', bd=1, relief=GROOVE, anchor=E)
+time_bar.pack(fill=X, side=BOTTOM, ipady=2)
+
+# Create a music pos slider
+my_slider = ttk.Scale(root, from_=0, to=100, orient=HORIZONTAL, value=0, command=Slide, length=360)
+my_slider.pack(pady=20)
+
+# Create slider label
+slider_label = Label(root, text="0")
+slider_label.pack(pady=10)
 
 root.mainloop()
