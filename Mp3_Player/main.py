@@ -10,10 +10,10 @@ import time
 root = Tk()
 root.title("Mp3 Player")
 root.geometry("1400x500")
-# root.resizable(False, False)
+root.resizable(False, False)
 
-bg_color = "#181818"
-fg_color = "#ff6a4b"
+bg_color = "#0e0e0e"
+fg_color = "#f63222"
 
 my_font = font.Font(family='Consolas', size=10, weight="bold")
 
@@ -33,8 +33,22 @@ def AddSong():
         songs_dirs.append(os.path.split(song)[0])
 
         song = os.path.split(song)[1].replace(".mp3", "")
-        songs_box.insert(END, song)
 
+        if CheckIfSongExists(song):
+            result = messagebox.askyesno("Dublication", fr"'{song}' already exists, do you want it to be added to ur playlist?")
+
+            if not result:
+                pass
+        else:
+            songs_box.insert(END, song)
+
+
+def CheckIfSongExists(song):
+    for i in range(songs_box.size()):
+        if song == songs_box.get(i, last=None):
+            return True
+
+    return False
 
 s_length = IntVar()
 s_length.set(0)
@@ -111,10 +125,12 @@ def PauseSong(is_paused):
     if paused:
         # unpause the song
         pygame.mixer.music.unpause()
+        pause_button.config(image=pause_button_image)
         paused = False
     else:
         # pause the song
         pygame.mixer.music.pause()
+        pause_button.config(image=paused_on_button_image)
         paused = True
 
 
@@ -249,10 +265,32 @@ def Slide(x):
 def VolumeSlider(x):
     pygame.mixer.music.set_volume(volume_slider.get())
 
+    if volume_slider.get() > 0:
+        volume_button.config(image=volume_image)
+
 
 def Mute():
     volume_slider.config(value=0)
     pygame.mixer.music.set_volume(0)
+    volume_button.config(image=muted_image)
+
+
+global replayed
+replayed = False
+
+
+def ReplayCurrentSong(is_replayed):
+    global replayed
+    replayed = is_replayed
+
+    if replayed:
+        # print("Don't Replay")
+        replay_button.config(image=replay_button_image)
+        replayed = False
+    else:
+        # print("Replay")
+        replay_button.config(image=replay_button_on_image)
+        replayed = True
 
 
 # Get song length and time info
@@ -290,7 +328,12 @@ def PlayTime():
     if int(my_slider.get()) >= int(song_len):
         # Convert to time format
         convert_current_time = time.strftime('%M:%S', time.gmtime(my_slider.get()))
-        NextSong()
+
+        if replayed:
+            my_slider.config(value=0)
+            PlaySong()
+        else:
+            NextSong()
 
         # time_bar.config(text=f"Time Elapsed: {convert_current_time} of {convert_song_len}")
     elif paused:
@@ -325,7 +368,8 @@ master_frame = Frame(root)
 master_frame.pack()
 
 # Create playlist box
-songs_box = Listbox(master_frame, bg=bg_color, fg=fg_color, font=my_font, justify=CENTER, width=198, height=20, selectbackground="gray",
+songs_box = Listbox(master_frame, bg=bg_color, fg=fg_color, font=my_font, justify=CENTER, width=198, height=20,
+                    selectbackground="gray",
                     selectforeground=bg_color)
 songs_box.grid(row=0, column=0, columnspan=10, pady=10)
 
@@ -335,9 +379,18 @@ add_button_image = PhotoImage(file="Images/add.png")
 back_button_image = PhotoImage(file="Images/rewind_back.png")
 stop_button_image = PhotoImage(file="Images/stop.png")
 play_button_image = PhotoImage(file="Images/play.png")
+
 pause_button_image = PhotoImage(file="Images/pause.png")
+paused_on_button_image = PhotoImage(file="Images/paused_on.png")
+
 forward_button_image = PhotoImage(file="Images/rewind_forward.png")
+
+replay_button_image = PhotoImage(file="Images/replay.png")
+replay_button_on_image = PhotoImage(file="Images/replay_on.png")
+
 volume_image = PhotoImage(file="Images/volume.png")
+muted_image = PhotoImage(file="Images/muted.png")
+
 music_image = PhotoImage(file="Images/note.png")
 
 # Create Player Control Frame
@@ -349,7 +402,7 @@ slider_start_label = Label(master_frame, text="00:00", font=my_font)
 slider_start_label.grid(row=2, column=4, pady=10, sticky=E)
 
 # Create end slider label
-slider_end_label = Label(master_frame, text="00:00", font= my_font)
+slider_end_label = Label(master_frame, text="00:00", font=my_font)
 slider_end_label.grid(row=2, column=6, pady=10, sticky=W)
 
 # Create Buttons
@@ -362,6 +415,8 @@ stop_button = Button(controls_frame, image=stop_button_image, command=StopSong, 
 
 forward_button = Button(controls_frame, image=forward_button_image, command=NextSong, borderwidth=0)
 delete_button = Button(controls_frame, image=delete_button_image, command=DeleteSong, borderwidth=0)
+replay_button = Button(controls_frame, image=replay_button_image, command=lambda: ReplayCurrentSong(replayed),
+                       borderwidth=0)
 
 volume_button = Button(master_frame, image=volume_image, command=Mute, borderwidth=0)
 
@@ -375,6 +430,7 @@ stop_button.grid(row=0, column=4, padx=5)
 
 forward_button.grid(row=0, column=5, ipadx=5)
 delete_button.grid(row=0, column=6, padx=5)
+replay_button.grid(row=0, column=7, padx=5)
 
 volume_button.grid(row=1, column=8, rowspan=2, padx=20, sticky=E)
 
