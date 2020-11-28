@@ -39,6 +39,8 @@ def AddSong():
 
             if not result:
                 pass
+            else:
+                songs_box.insert(END, song)
         else:
             songs_box.insert(END, song)
 
@@ -69,7 +71,7 @@ def PlaySong(active_song=None):
 
         song_path = f"{songs_dirs[0]}/{active_song}.mp3"
 
-        print(song_path)
+        # print(song_path)
         pygame.mixer.music.load(song_path)
         pygame.mixer.music.play(loops=0)
     except IndexError:
@@ -226,7 +228,7 @@ def DeleteSong():
         messagebox.showinfo("Error", "Please select a song!")
         return
 
-    print(n, num)
+    # print(n, num)
 
     # Delete the selected song
     songs_box.delete(ANCHOR)
@@ -424,13 +426,13 @@ volume_button = Button(master_frame, image=volume_image, command=Mute, borderwid
 add_button.grid(row=0, column=0, padx=5)
 back_button.grid(row=0, column=1, padx=5)
 
-play_button.grid(row=0, column=2, padx=5)
-pause_button.grid(row=0, column=3, padx=5)
-stop_button.grid(row=0, column=4, padx=5)
+replay_button.grid(row=0, column=2, padx=5)
+play_button.grid(row=0, column=3, padx=5)
+pause_button.grid(row=0, column=4, padx=5)
+stop_button.grid(row=0, column=5, padx=5)
 
-forward_button.grid(row=0, column=5, ipadx=5)
-delete_button.grid(row=0, column=6, padx=5)
-replay_button.grid(row=0, column=7, padx=5)
+forward_button.grid(row=0, column=6, ipadx=5)
+delete_button.grid(row=0, column=7, padx=5)
 
 volume_button.grid(row=1, column=8, rowspan=2, padx=20, sticky=E)
 
